@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use Filament\Forms\Components\Actions;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,40 +38,59 @@ class Speaker extends Model
     {
         return [
            TextInput::make('name')
-                ->required()
-                ->maxLength(255),
+               ->required()
+               ->maxLength(255),
+           FileUpload::make('avatar')
+               ->avatar()
+               ->imageEditor()
+               ->maxSize(1024 * 1024 * 10),
            TextInput::make('email')
-                ->email()
-                ->required()
-                ->maxLength(255),
-            MarkdownEditor::make('bio')
-                ->required()
-                ->columnSpanFull(),
+               ->email()
+               ->required()
+               ->maxLength(255),
+           MarkdownEditor::make('bio')
+               ->columnSpanFull(),
            TextInput::make('twitter_handle')
-                ->required()
-                ->maxLength(255),
-            CheckboxList::make('qualifications')
-                ->columnSpanFull()
-                ->searchable()
-                ->bulkToggleable()
-                ->options([
-                    'business-leader' => 'Business Leader',
-                    'charisma' => 'Charismatic Speaker',
-                    'first-time' => 'First Time Speaker',
-                    'hometown-hero' => 'Hometown Hero',
-                    'humanitarian' => 'Works in Humanitarian Field',
-                    'laracasts-contributor' => 'Laracasts Contributor',
-                    'twitter-influencer' => 'Large Twitter Following',
-                    'youtube-influencer' => 'Large Youtube Following',
-                    'open-source' => 'Open Source Creator / Maintainer',
-                    'unique-perspective' => 'Unique Perspective',
-                ])
-                ->descriptions([
-                    'business-leader' => 'Here is a nice long description',
-                    'charisma' => 'This is even more information about why you should pick this one',
-                ])
-                ->columns(3),
-
+               ->maxLength(255),
+           CheckboxList::make('qualifications')
+               ->columnSpanFull()
+               ->searchable()
+               ->bulkToggleable()
+               ->options([
+                   'business-leader' => 'Business Leader',
+                   'charisma' => 'Charismatic Speaker',
+                   'first-time' => 'First Time Speaker',
+                   'hometown-hero' => 'Hometown Hero',
+                   'humanitarian' => 'Works in Humanitarian Field',
+                   'laracasts-contributor' => 'Laracasts Contributor',
+                   'twitter-influencer' => 'Large Twitter Following',
+                   'youtube-influencer' => 'Large Youtube Following',
+                   'open-source' => 'Open Source Creator / Maintainer',
+                   'unique-perspective' => 'Unique Perspective',
+               ])
+               ->descriptions([
+                   'business-leader' => 'Here is a nice long description',
+                   'charisma' => 'This is even more information about why you should pick this one',
+               ])
+               ->columns(3),
+            Actions::make([
+                Action::make('star')
+                    ->label('Fill with Factory Data')
+                    ->icon('heroicon-m-star')
+                    ->visible(function (string $operation) {
+                        if ($operation !== 'create') {
+                            return false;
+                        }
+                        if (! app()->environment('local')) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    ->action(function ($livewire) {
+                        $data = Speaker::factory()->make()->toArray();
+                        $livewire->form->fill($data);
+                    }),
+            ])
         ];
     }
 }
