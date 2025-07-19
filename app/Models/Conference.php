@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use App\Enums\Region;
-use Database\Factories\ConferenceFactory;
 use Filament\Forms;
 use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\MarkdownEditor;
@@ -24,37 +22,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Conference extends Model
 {
     use HasFactory;
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'id' => 'integer',
-            'start_date' => 'datetime',
-            'end_date' => 'datetime',
-            'region' => Region::class,
-            'venue_id' => 'integer',
-        ];
-    }
-
-    public function venue(): BelongsTo
-    {
-        return $this->belongsTo(Venue::class);
-    }
-
-    public function speakers(): BelongsToMany
-    {
-        return $this->belongsToMany(Speaker::class);
-    }
-
-    public function talks(): BelongsToMany
-    {
-        return $this->belongsToMany(Talk::class);
-    }
 
     public static function getForm(): array
     {
@@ -107,7 +74,10 @@ class Conference extends Model
                         ->preload()
                         ->createOptionForm(Venue::getForm())
                         ->editOptionForm(Venue::getForm())
-                        ->relationship('venue', 'name', modifyQueryUsing: function (Builder $query, Forms\Get $get): Builder {
+                        ->relationship('venue', 'name', modifyQueryUsing: function (
+                            Builder $query,
+                            Forms\Get $get
+                        ): Builder {
                             return $query->where('region', $get('region'));
                         }),
                 ]),
@@ -119,7 +89,7 @@ class Conference extends Model
                         if ($operation !== 'create') {
                             return false;
                         }
-                        if (! app()->environment('local')) {
+                        if (!app()->environment('local')) {
                             return false;
                         }
                         return true;
@@ -129,6 +99,37 @@ class Conference extends Model
                         $livewire->form->fill($data);
                     }),
             ]),
+        ];
+    }
+
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class);
+    }
+
+    public function speakers(): BelongsToMany
+    {
+        return $this->belongsToMany(Speaker::class);
+    }
+
+    public function talks(): BelongsToMany
+    {
+        return $this->belongsToMany(Talk::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'id' => 'integer',
+            'start_date' => 'datetime',
+            'end_date' => 'datetime',
+            'region' => Region::class,
+            'venue_id' => 'integer',
         ];
     }
 }
