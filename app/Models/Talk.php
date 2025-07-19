@@ -40,6 +40,22 @@ class Talk extends Model
         return $this->belongsToMany(Conference::class);
     }
 
+    public function approve(): void
+    {
+        $this->status = TalkStatus::APPROVED;
+
+        // Email the speaker about the approval
+        $this->save();
+    }
+
+    public function reject(): void
+    {
+        $this->status = TalkStatus::REJECTED;
+
+        // Email the speaker about the rejection
+        $this->save();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
