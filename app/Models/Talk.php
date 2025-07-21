@@ -16,7 +16,7 @@ class Talk extends Model
 {
     use HasFactory;
 
-    public static function getForm(): array
+    public static function getForm($speakerId = null): array
     {
         return [
             TextInput::make('title')
@@ -26,6 +26,7 @@ class Talk extends Model
                 ->required()
                 ->columnSpanFull(),
             Select::make('speaker_id')
+                ->hidden($speakerId ?? 0)
                 ->relationship('speaker', 'name'),
         ];
     }

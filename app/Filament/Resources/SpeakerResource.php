@@ -2,16 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SpeakerResource\Pages;
-use App\Filament\Resources\SpeakerResource\RelationManagers;
+use App\Enums\TalkStatus;
+use App\Filament\Resources\SpeakerResource\Pages\CreateSpeaker;
+use App\Filament\Resources\SpeakerResource\Pages\ListSpeakers;
+use App\Filament\Resources\SpeakerResource\Pages\ViewSpeaker;
+use App\Filament\Resources\SpeakerResource\RelationManagers\TalksRelationManager;
 use App\Models\Speaker;
-use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Group;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SpeakerResource extends Resource
 {
@@ -29,17 +37,17 @@ class SpeakerResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('twitter_handle')
+                TextColumn::make('twitter_handle')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -48,28 +56,66 @@ class SpeakerResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                ViewAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make('Personal Information')
+                    ->columns(3)
+                    ->schema([
+                        ImageEntry::make('avatar')
+                            ->circular(),
+                        Group::make()
+                            ->columnSpan(2)
+                            ->columns(2)
+                            ->schema([
+                                TextEntry::make('name'),
+                                TextEntry::make('email'),
+                                TextEntry::make('twitter_handle')
+                                    ->label('Twitter')
+                                    ->getStateUsing(function ($record) {
+                                        return '@'.$record->twitter_handle;
+                                    })
+                                    ->url(fn (Speaker $record): string => 'https://x.com/'.$record->twitter_handle),
+                                TextEntry::make('has_spoken')
+                                    ->getStateUsing(fn (Speaker $record): string => $record->talks()->where('status', TalkStatus::APPROVED)->count() > 0 ? 'Previous Speaker' : 'Has Not Spoken')
+                                    ->badge()
+                                    ->color(fn (Speaker $record): string => $record->talks()->where('status', TalkStatus::APPROVED)->count() > 0 ? 'success' : 'primary'),
+                            ]),
+                    ]),
+                Section::make('Other Information')
+                    ->schema([
+                        TextEntry::make('bio')
+                            ->columnSpanFull()
+                            ->markdown()
+                            ->getStateUsing(fn (Speaker $record): string => $record->bio ?? 'No bio provided.'),
+                        TextEntry::make('qualifications'),
+                    ]),
             ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            //
+            TalksRelationManager::class,
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSpeakers::route('/'),
-            'create' => Pages\CreateSpeaker::route('/create'),
-            'edit' => Pages\EditSpeaker::route('/{record}/edit'),
+            'index' => ListSpeakers::route('/'),
+            'create' => CreateSpeaker::route('/create'),
+            'view' => ViewSpeaker::route('/{record}'),
         ];
     }
 }
